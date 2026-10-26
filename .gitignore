@@ -1,0 +1,39 @@
+# Python & Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# CRITICAL SECURITY: Secrets, Keys, Certificates & Environment variables
+.env
+.env.*
+keys/
+*.pem
+*.key
+
+# Runtime Logs & Large Process Data
+*.log
+*.err
+*.jsonl
+*.pdf
+*.png
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/telegram_last_weekly_report.json
+data/telegram_last_daily_report.json
+data/telegram_auth_users.json
+data/admin_manual_commands.json
+
+# Temp & IDE
+.DS_Store
+.idea/
+.vscode/
+.agents/
+scratch/

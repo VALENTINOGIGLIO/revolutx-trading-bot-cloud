@@ -1,0 +1,3 @@
+timestamp,trade_id,symbol,action,price,size,notional,fee,pnl,pnl_pct,portfolio_balance,cash_balance,exit_reason
+2026-10-21T16:22:32.946000+00:00,tr_00001,BTCEUR,BUY,75376.78,0.000440,33.1658,0.0000,0.00,0.00,149.6702,66.4542,
+2026-10-22T02:28:07.108000+00:00,tr_00001,BTCEUR,SELL,73626.27,0.000660,48.5933,0.0000,-1.0819,-2.18,148.4778,148.1833,

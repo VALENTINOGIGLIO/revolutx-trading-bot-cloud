@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot - Real-Time Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-title-group">
+                <div class="logo-badge">TBOT</div>
+                <h1 class="dashboard-title">Autonomous Trading Dashboard</h1>
+            </div>
+            <div class="header-status-group">
+                <div id="symbol-badge" class="symbol-badge">BTC/EUR</div>
+                <div class="live-indicator">
+                    <div id="status-dot" class="pulse-dot"></div>
+                    <span id="status-text">CONNECTING...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Portfolio Equity</div>
+                <div id="kpi-equity" class="kpi-value">150.00 €</div>
+                <div id="kpi-net-profit" class="kpi-sub" style="color: #10b981; font-weight: 600;">Guadagni Netti: +0.00 €</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Available Cash</div>
+                <div id="kpi-cash" class="kpi-value">150.00 €</div>
+                <div class="kpi-sub">Unallocated Capital</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Trades</div>
+                <div id="kpi-trades" class="kpi-value">0</div>
+                <div class="kpi-sub">Executed Fills</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Bot State</div>
+                <div id="kpi-status" class="kpi-value" style="color: #9ca3af;">IDLE</div>
+                <div class="kpi-sub">Execution Engine Status</div>
+            </div>
+        </section>
+
+        <!-- Candlestick Chart Section -->
+        <section class="chart-wrapper">
+            <div class="chart-header">
+                <div class="chart-title">Real-Time Market Data &amp; Trade Markers</div>
+                <div class="chart-legend">
+                    <div class="legend-item"><span class="legend-icon buy"></span> BUY Entry</div>
+                    <div class="legend-item"><span class="legend-icon sell"></span> SELL Exit</div>
+                </div>
+            </div>
+            <div id="chart"></div>
+        </section>
+
+        <!-- Executed Trades History -->
+        <section class="trades-section">
+            <div class="trades-header">
+                <h2 class="trades-title">Recent Trade Executions</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="trades-table" id="trades-table">
+                    <thead>
+                        <tr>
+                            <th>Time (UTC)</th>
+                            <th>Action</th>
+                            <th>Price (€)</th>
+                            <th>Size</th>
+                            <th>Realized PnL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-table-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center;color:#6b7280;padding:1rem;">Loading trades...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Charting Library: Vendored Local Bundle with CDN Fallback -->
+    <script src="/static/js/vendor/lightweight-charts.standalone.production.js"></script>
+    <script>
+        if (typeof LightweightCharts === 'undefined') {
+            console.warn("Local LightweightCharts not found, falling back to CDN...");
+            const cdnScript = document.createElement('script');
+            cdnScript.src = "https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js";
+            document.head.appendChild(cdnScript);
+        }
+    </script>
+    <!-- Application Logic -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+name: Revolut X Trading Bot Cloud 24/7
+
+on:
+  schedule:
+    # Watchdog automatico ogni 15 minuti per garantire che il demone 24/7 sia sempre attivo sul server cloud
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      trading_pairs:
+        description: 'Coppie di trading'
+        required: false
+        default: 'SOL/EUR,ETH/EUR,BTC/EUR'
+      trading_mode:
+        description: 'Modalita operativa (LIVE o PAPER)'
+        required: false
+        default: 'LIVE'
+
+concurrency:
+  group: revolutx-cloud-bot-24-7
+  cancel-in-progress: false
+
+jobs:
+  trade-evaluation:
+    name: Continuous 24/7 Cloud Bot & Telegram Listener
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Restore Persistent Market Data DB Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/market_data.db
+            data/telegram_auth_users.json
+          key: trading-bot-db-${{ github.run_id }}
+          restore-keys: |
+            trading-bot-db-
+
+      - name: Configure Revolut X Private Key & Auth Users
+        run: |
+          mkdir -p keys data
+          echo "$REVOLUTX_PRIVATE_KEY" > keys/revolutx_private.pem
+          chmod 600 keys/revolutx_private.pem
+          if [ ! -s data/telegram_auth_users.json ] && [ -n "$TELEGRAM_AUTH_USERS_JSON" ]; then
+            echo "$TELEGRAM_AUTH_USERS_JSON" > data/telegram_auth_users.json
+          fi
+        env:
+          REVOLUTX_PRIVATE_KEY: ${{ secrets.REVOLUTX_PRIVATE_KEY }}
+          TELEGRAM_AUTH_USERS_JSON: ${{ secrets.TELEGRAM_AUTH_USERS_JSON }}
+
+      - name: Run AMV-TrendBreak 4h Strategy Cycle
+        timeout-minutes: 310
+        continue-on-error: true
+        env:
+          TRADING_MODE: ${{ github.event.inputs.trading_mode || 'LIVE' }}
+          EXCHANGE: "revolutx"
+          REVOLUTX_API_KEY: ${{ secrets.REVOLUTX_API_KEY }}
+          REVOLUTX_PRIVATE_KEY_PATH: "keys/revolutx_private.pem"
+          REVOLUTX_BASE_URL: "https://revx.revolut.com/api/1.0"
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_PASSWORD: ${{ secrets.TELEGRAM_BOT_PASSWORD }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRADING_PAIRS: ${{ github.event.inputs.trading_pairs || 'SOL/EUR,ETH/EUR,BTC/EUR' }}
+        run: |
+          echo "=========================================================="
+          echo "🚀 Avvio ciclo cloud 4h AMV-TrendBreak su Revolut X"
+          echo "Modalita: $TRADING_MODE | Exchange: Revolut X (0.00% Maker fee)"
+          echo "Coppie: $TRADING_PAIRS"
+          echo "UTC Time: $(date -u)"
+          echo "=========================================================="
+          PYTHONPATH=src python3 -m trading_bot.cli.paper \
+            --pair "$TRADING_PAIRS" \
+            --balance 150.0 \
+            --timeframe 4h \
+            --exchange revolutx \
+            --iterations 300 \
+            --live \
+            --verbose
+
+      - name: Save and Commit Updated Trade Ledger & Cache
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/trades.csv data/telegram_last_4h_report.json || true
+          git diff --staged --quiet || git commit -m "Auto-update state [skip ci]"
+          git pull --rebase -X theirs origin main || true
+          git push origin main || true
+
+      - name: Auto-Respawn Next 24/7 Cloud Worker
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run cloud_bot.yml --ref main || true
+
+      - name: Purge Private Keys from Workspace
+        if: always()
+        run: |
+          rm -rf keys
